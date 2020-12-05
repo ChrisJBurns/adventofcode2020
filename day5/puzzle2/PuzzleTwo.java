@@ -47,7 +47,7 @@ class PuzzleTwo {
             }
 
             for (int i = 7; i < seat.length(); i++) {
-                columnPair = getColumn(columnPair, Character.toString(seat.charAt(i)));
+                columnPair = getPartition(columnPair, Character.toString(seat.charAt(i)));
                 if (columnPair.getMin() == columnPair.getMax()) {
                     column = columnPair.getMin();
                     break;
@@ -67,25 +67,11 @@ class PuzzleTwo {
 
     }
 
-    private static Pair getColumn(Pair pair, String letter) {
-        int min;
-        int max;
-
-        if ("L".equals(letter)) {
-            min = pair.getMin();
-            max = pair.getMax() - ((pair.getMax() - pair.getMin()) / 2 ) - 1;
-        } else {
-            min = pair.getMax() - ((pair.getMax() - pair.getMin()) / 2 );
-            max = pair.getMax();
-        }
-        return new Pair(min , max);
-    }
-
     private static Pair getPartition(Pair pair, String letter) {
         int min;
         int max;
 
-        if ("F".equals(letter)) {
+        if ("F".equals(letter) || "L".equals(letter)) {
             min = pair.getMin();
             max = pair.getMax() - ((pair.getMax() - pair.getMin()) / 2 ) - 1;
         } else {
