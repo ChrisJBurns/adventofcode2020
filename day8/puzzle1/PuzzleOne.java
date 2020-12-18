@@ -1,96 +1,70 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 class PuzzleOne {
 
-    private static final Pattern BAG = Pattern.compile("\\w*\\s\\w*\\s(?=(bag|bags) contain)");
-    private static final Pattern CHILD_BAG = Pattern.compile("(?<=contain\\s)(.*)(?=.)");
+    private static class InstructionPair<String, Integer> {
+        private final String key;
+        private final Integer value;
+
+        public InstructionPair(String key, Integer value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public Integer getValue() {
+            return value;
+        }
+    }
+
+    private static final String ACC = "acc";
+    private static final String JMP = "jmp";
 
     public static void main(String[] args) throws FileNotFoundException {
+        List<InstructionPair<String, Integer>> instructions = getInstructions();
 
-        List<String> rules = getRules();
+        int accumulator = 0;
 
-        Map<String, List<Map<String, String>>> bagRuleMap = getBagList(rules);
+        List<Integer> completedInstructionIndexes = new ArrayList<>();
 
-        Set<String> bags = new HashSet<>();
-        getCount(bagRuleMap, "shiny gold", bags);
-
-        System.out.printf("Count: %s", bags.size());
-    }
-
-    private static Set<String> getCount(Map<String, List<Map<String, String>>> bagRuleMap, String bagName, Set<String> bags) {
-        bagRuleMap.entrySet().stream()
-            .filter(e -> e.getValue().stream().anyMatch(childBags -> childBags.containsValue(bagName)))
-            .forEach(entry -> {
-                bags.add(entry.getKey());
-                getCount(bagRuleMap, entry.getKey(), bags);
-            });
-
-        return bags;
-    }
-
-    /**
-     * builds a map of the bags and their child bags. each bag has a list of child bags and their
-     * counts or has no child bags at all. this makes it easier to query due to it representing a
-     * data object
-     * @param rules
-     * @return
-     */
-    private static Map<String, List<Map<String, String>>> getBagList(List<String> rules) {
-        Map<String, List<Map<String, String>>> bagsMap = new HashMap<>();
-
-        rules.forEach(
-            rule -> {
-                List<Map<String, String>> childBagMapList = new ArrayList<>();
-
-                Matcher childBagMatcher = CHILD_BAG.matcher(rule);
-                if (childBagMatcher.find()) {
-                    String childBagRule = childBagMatcher.group();
-
-                    if (!childBagRule.contains("no other bags")) {
-                        List<String> childBagRules = Arrays
-                            .asList(childBagRule.split("(bag|bags)(,|$)"));
-
-                        childBagRules.forEach(
-                            childRule -> {
-                                // splits the number and colour of the bag into two separate strings
-                                String[] parts2 = childRule.trim().split("(?<=[0-9])");
-                                childBagMapList.add(Map.of(
-                                    "bag", parts2[1].trim(),
-                                    "number", parts2[0].trim()));
-                            }
-                        );
-                    }
-
-                    Matcher parentBagMatcher = BAG.matcher(rule);
-                    if (parentBagMatcher.find()) {
-                        bagsMap.put(parentBagMatcher.group().trim(), childBagMapList);
-                    }
-                }
+        for (int i = 0; i < instructions.size(); i++) {
+            if (completedInstructionIndexes.contains(i)) {
+                System.out.printf("Accumulator: %d \n", accumulator);
+                break;
             }
-        );
+            completedInstructionIndexes.add(i);
+            InstructionPair<String, Integer> instruction = instructions.get(i);
 
-        return bagsMap;
+            if (ACC.equals(instruction.getKey())) {
+                accumulator += instruction.getValue();
+                continue;
+            }
+
+            if (JMP.equals(instruction.getKey())) {
+                i += instruction.getValue() - 1;
+            }
+        }
     }
 
-    private static List<String> getRules() throws FileNotFoundException {
+    private static List<InstructionPair<String, Integer>> getInstructions() throws FileNotFoundException {
         File file = new File("input.txt");
         Scanner scanner = new Scanner(file);
 
-        List<String> rules = new ArrayList<>();
+        List<InstructionPair<String, Integer>> rules = new ArrayList<>();
         while (scanner.hasNextLine()) {
-            String data = scanner.nextLine();
-            rules.add(data);
+            String instruction = scanner.nextLine();
+
+            String type = instruction.split("\\s")[0].trim();
+            int number = Integer.parseInt(instruction.split("\\s")[1]);
+
+            rules.add(new InstructionPair<>(type, number));
         }
         scanner.close();
         return rules;
